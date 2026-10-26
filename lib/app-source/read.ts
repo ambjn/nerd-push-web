@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 
 export type SourceDevice = { id: string; token: string; token_sha256: string; provider: "fcm" | "apns"; notifications_enabled: boolean | null };
 export type SourceState = {
-  user: { firebase_uid: string; timezone: string } | null;
+  user: { firebase_uid: string; timezone: string; display_name?: string | null } | null;
   marketing_choice: "opted_in" | "opted_out" | null;
   devices: SourceDevice[];
 };
@@ -19,7 +19,7 @@ function reader() {
 export async function readSourceState(firebaseUid: string): Promise<SourceState> {
   const db = reader();
   const [u, p, d] = await Promise.all([
-    db.from("app_user").select("firebase_uid,timezone").eq("firebase_uid", firebaseUid).maybeSingle(),
+    db.from("app_user").select("firebase_uid,timezone,display_name").eq("firebase_uid", firebaseUid).maybeSingle(),
     db.from("notification_preference").select("marketing_choice").eq("firebase_uid", firebaseUid).maybeSingle(),
     db.from("push_device").select("id,token,token_sha256,provider,notifications_enabled")
       .eq("firebase_uid", firebaseUid).is("revoked_at", null).limit(20),
