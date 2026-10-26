@@ -22,6 +22,17 @@ export function parseInput(x: unknown, partial = false): Partial<Creative> | { e
 
 export async function listCreatives() { const { data, error } = await db().from("push_creative").select("*").order("created_at", { ascending: false }); if (error) throw new Error(error.message); return data as Creative[]; }
 export async function getCreative(id: string) { const { data, error } = await db().from("push_creative").select("*").eq("id", id).maybeSingle(); if (error) throw new Error(error.message); return data as Creative | null; }
+export async function listApprovedVersions() {
+  const { data, error } = await db().from("push_creative_version").select("id,creative_id,version,title,body,route,message_class,approved_at,push_creative(label)").order("approved_at", { ascending: false }).limit(100);
+  if (error) throw new Error(error.message);
+  type Row = { id: string; creative_id: string; version: number; title: string; route: string; push_creative: { label: string } | { label: string }[] | null };
+  return ((data ?? []) as unknown as Row[]).map((v) => ({ id: v.id, creative_id: v.creative_id, version: v.version, title: v.title, route: v.route, label: (Array.isArray(v.push_creative) ? v.push_creative[0] : v.push_creative)?.label ?? "" }));
+}
+export async function listTestSends() {
+  const { data, error } = await db().from("push_test_send").select("id,firebase_uid,title,provider,status,error_code,created_at").order("created_at", { ascending: false }).limit(20);
+  if (error) throw new Error(error.message);
+  return data as { id: string; firebase_uid: string; title: string; provider: string; status: string; error_code: string | null; created_at: string }[];
+}
 export async function listVersions(creativeId: string) { const { data, error } = await db().from("push_creative_version").select("*").eq("creative_id", creativeId).order("version", { ascending: false }); if (error) throw new Error(error.message); return data as CreativeVersion[]; }
 export async function createCreative(actor: string, input: Partial<Creative>) { const { data, error } = await db().from("push_creative").insert({ ...input, created_by: actor }).select("*").single(); if (error) throw new Error(error.message); return { creative: data as Creative, lint: lintCreative(data as Creative) }; }
 export async function patchCreative(id: string, rowVersion: number, patch: Partial<Creative>) {

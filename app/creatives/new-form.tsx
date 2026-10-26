@@ -10,7 +10,7 @@ export function NewCreativeForm() {
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>;
-    try { const r = await api<{ creative: { id: string } }>("/api/push-creatives", { ...f, web_url: f.web_url || null }); router.push(`/push/${r.creative.id}`); }
+    try { const r = await api<{ creative: { id: string } }>("/api/push-creatives", { ...f, web_url: f.web_url || null }); router.push(`/creatives/${r.creative.id}`); }
     catch (err) { setError((err as Error).message); }
   }
   return (

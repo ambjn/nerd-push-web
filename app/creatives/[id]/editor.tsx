@@ -6,16 +6,14 @@ import type { Creative, CreativeVersion } from "@/lib/creatives";
 import { LIMITS } from "@/lib/push/creative";
 import { IMPLEMENTED_ROUTES, ROUTE_KEYS } from "@/lib/push/routes";
 
-export function Editor({ creative, lint, titleBytes, bodyBytes, versions, registered }: { creative: Creative; lint: string[]; titleBytes: number; bodyBytes: number; versions: CreativeVersion[]; registered: { firebase_uid: string; display_name: string | null; updated_at: string }[] | null }) {
+export function Editor({ creative, lint, titleBytes, bodyBytes, versions }: { creative: Creative; lint: string[]; titleBytes: number; bodyBytes: number; versions: CreativeVersion[] }) {
   const router = useRouter();
   const [title, setTitle] = useState(creative.title);
   const [body, setBody] = useState(creative.body);
-  const [uid, setUid] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [out, setOut] = useState<string | null>(null);
   const draft = creative.status === "draft";
   const call = async (fn: () => Promise<unknown>, ok: string) => { try { const r = await fn(); setMsg(ok); setOut(r ? JSON.stringify(r, null, 2) : null); router.refresh(); } catch (e) { setMsg((e as Error).message); } };
-  const latest = versions[0];
 
   async function save(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -45,18 +43,7 @@ export function Editor({ creative, lint, titleBytes, bodyBytes, versions, regist
       <div className="flex flex-wrap gap-3">
         <button className={button} disabled={!draft}>Save draft</button>
         <button type="button" className={secondary} onClick={() => call(() => api(`/api/push-creatives/${creative.id}/preview`, {}), "Preview (read-only)")}>Preview payload</button>
-        <button type="button" className={secondary} disabled={!draft || lint.length > 0} onClick={() => call(() => api(`/api/push-creatives/${creative.id}/approve`, { row_version: creative.row_version }), "Approved: version frozen")}>Approve</button>
-      </div>
-      <div className="flex flex-wrap items-end gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-        <label className="flex flex-col gap-1"><span className="text-zinc-500">Test send to a registered user (read-only bridge to the app&apos;s logged-in devices)</span>
-          {registered === null ? <input value={uid} onChange={(e) => setUid(e.target.value)} placeholder="reader unavailable: enter Firebase UID" className={field} /> : (
-            <select value={uid} onChange={(e) => setUid(e.target.value)} className={field}>
-              <option value="">{registered.length ? "Choose a user" : "No registered devices yet"}</option>
-              {registered.map((r) => <option key={r.firebase_uid} value={r.firebase_uid}>{r.display_name ?? r.firebase_uid} · {new Date(r.updated_at).toLocaleString()}</option>)}
-            </select>
-          )}
-        </label>
-        <button type="button" className={secondary} disabled={!latest || !uid} onClick={() => call(() => api(`/api/push-creatives/${creative.id}/test-send`, { firebaseUid: uid, versionId: latest?.id }), "Test send recorded (accepted = accepted by FCM, not shown on phone)")}>Test send v{latest?.version ?? "–"}</button>
+        <button type="button" className={secondary} disabled={!draft || lint.length > 0} onClick={() => call(() => api(`/api/push-creatives/${creative.id}/approve`, { row_version: creative.row_version }), "Approved and frozen. Go to Send to use it.")}>Approve</button>
       </div>
       {msg && <p role="status">{msg}</p>}
       {out && <pre className="overflow-auto rounded bg-zinc-100 p-3 text-xs dark:bg-zinc-800">{out}</pre>}

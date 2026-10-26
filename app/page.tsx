@@ -1,26 +1,36 @@
 import Link from "next/link";
 import { connection } from "next/server";
-import { listCreatives } from "@/lib/creatives";
-import { db } from "@/lib/db";
+import { listApprovedVersions, listTestSends } from "@/lib/creatives";
 import { providerName } from "@/lib/push/provider";
-import { NewCreativeForm } from "./push/new-form";
+import { listRegistered } from "@/lib/reader";
+import { SendForm } from "./send-form";
 
-export default async function Home() {
+const card = "rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900";
+
+export default async function SendPage() {
   await connection();
-  const [creatives, { count }] = await Promise.all([listCreatives(), db().from("push_device").select("*", { count: "exact", head: true })]);
+  const [registered, versions, sends] = await Promise.all([listRegistered().catch(() => []), listApprovedVersions(), listTestSends()]);
+  const provider = providerName();
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
-      <header className="flex items-center justify-between">
-        <div><h1 className="text-xl font-semibold">Nerd Push</h1><p className="text-sm text-zinc-500">{count ?? 0} registered device(s) · provider {providerName()}</p></div>
-      </header>
-      <section className="rounded-lg border border-zinc-200 p-5 dark:border-zinc-800"><h2 className="mb-3 font-medium">New creative</h2><NewCreativeForm /></section>
-      <section className="rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
-        <h2 className="mb-3 font-medium">Creatives</h2>
-        <ul className="divide-y divide-zinc-100 text-sm dark:divide-zinc-800">
-          {creatives.length === 0 && <li className="py-4 text-zinc-500">None yet.</li>}
-          {creatives.map((c) => <li key={c.id} className="flex justify-between py-2"><Link href={`/push/${c.id}`} className="underline">{c.label}</Link><span className="text-zinc-500">{c.message_class} → {c.route} · {c.status}</span></li>)}
-        </ul>
+    <>
+      <section className={card}>
+        <div className="mb-4 flex items-baseline justify-between">
+          <h1 className="text-lg font-semibold">Send a notification</h1>
+          <span className={`text-xs ${provider === "fcm" ? "text-emerald-600" : "text-amber-600"}`}>{provider === "fcm" ? "live: FCM" : "mock provider: nothing reaches the phone until FIREBASE_SERVICE_ACCOUNT_JSON is set"}</span>
+        </div>
+        {versions.length === 0 && <p className="mb-3 text-sm text-zinc-500">No approved creative yet. <Link href="/creatives" className="underline">Create and approve one</Link>.</p>}
+        <SendForm registered={registered} versions={versions.map((v) => ({ id: v.id, creativeId: v.creative_id, label: `${v.label} v${v.version} — ${v.title} → ${v.route}` }))} />
       </section>
-    </main>
+      <section className={card}>
+        <h2 className="mb-3 font-medium">Recent sends</h2>
+        <table className="w-full text-left text-sm">
+          <thead className="text-zinc-500"><tr><th className="pb-2 font-normal">When</th><th className="pb-2 font-normal">To</th><th className="pb-2 font-normal">Title</th><th className="pb-2 font-normal">Result</th></tr></thead>
+          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            {sends.length === 0 && <tr><td colSpan={4} className="py-6 text-center text-zinc-500">Nothing sent yet.</td></tr>}
+            {sends.map((s) => <tr key={s.id}><td className="py-2 text-zinc-500">{new Date(s.created_at).toLocaleString()}</td><td className="py-2 font-mono text-xs">{s.firebase_uid.slice(0, 10)}…</td><td className="py-2">{s.title}</td><td className="py-2">{s.provider} · {s.status === "accepted" ? "accepted by provider" : s.status}{s.error_code ? ` (${s.error_code})` : ""}</td></tr>)}
+          </tbody>
+        </table>
+      </section>
+    </>
   );
 }
