@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { currentUser } from "@/lib/auth";
 import { listCreatives } from "@/lib/creatives";
 import { db } from "@/lib/db";
+import { providerName } from "@/lib/push/provider";
 import { NewCreativeForm } from "./push/new-form";
 
 export default async function Home() {
@@ -11,7 +12,7 @@ export default async function Home() {
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
       <header className="flex items-center justify-between">
-        <div><h1 className="text-xl font-semibold">Nerd Push</h1><p className="text-sm text-zinc-500">{count ?? 0} registered device(s) · provider {process.env.PUSH_PROVIDER ?? "mock"}</p></div>
+        <div><h1 className="text-xl font-semibold">Nerd Push</h1><p className="text-sm text-zinc-500">{count ?? 0} registered device(s) · provider {providerName()}</p></div>
         <form action="/api/auth/logout" method="post"><button className="text-sm underline">Sign out</button></form>
       </header>
       <section className="rounded-lg border border-zinc-200 p-5 dark:border-zinc-800"><h2 className="mb-3 font-medium">New creative</h2><NewCreativeForm /></section>

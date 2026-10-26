@@ -1,8 +1,8 @@
-import { fcmAccessToken } from "@/lib/firebase";
+import { FIREBASE_PROJECT_ID, fcmAccessToken } from "@/lib/firebase";
 import type { FcmMessage } from "./payload";
 import type { ProviderResult, PushProvider } from "./provider";
 
-const PROJECT = () => process.env.FIREBASE_PROJECT_ID ?? "nerd-push";
+const PROJECT = () => FIREBASE_PROJECT_ID;
 export const EXPECTED_PACKAGE = "com.ambjn.neshpushandroid";
 type FcmError = { error?: { status?: string; details?: { "@type"?: string; errorCode?: string }[] } };
 

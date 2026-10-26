@@ -48,7 +48,6 @@ export async function testSend(actor: string, firebaseUid: string, versionId: st
   let device: Device | null;
   try { device = await readDevice(firebaseUid); } catch { return { error: "reader_unavailable", status: 503 } as const; }
   const provider = await selectProvider();
-  if ("disabled" in provider) return { error: provider.reason, status: 503 } as const;
   const eventId = crypto.randomUUID();
   const r = await runTestSend({ eventId, firebaseUid, version: v as Version, device, provider });
   const { error } = await db().from("push_test_send").insert({ id: eventId, actor, firebase_uid: firebaseUid, creative_version_id: v.id, title: r.title, provider: provider.name, status: r.status, error_code: r.error, device_outcomes: r.outcomes });

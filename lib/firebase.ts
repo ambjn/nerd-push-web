@@ -1,6 +1,7 @@
 import { createRemoteJWKSet, importPKCS8, jwtVerify, SignJWT } from "jose";
 
-const PROJECT_ID = () => process.env.FIREBASE_PROJECT_ID ?? "nerd-push";
+export const FIREBASE_PROJECT_ID = "nerd-push";
+const PROJECT_ID = () => FIREBASE_PROJECT_ID;
 const JWKS = createRemoteJWKSet(new URL("https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"));
 
 /** Verifies a Firebase ID token (RS256 signature, issuer, audience, expiry) and returns its UID, or null. */
