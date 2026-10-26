@@ -3,15 +3,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, button, field } from "./ui";
 import { IMPLEMENTED_ROUTES, ROUTE_KEYS } from "@/lib/push/routes";
+import { Spinner } from "@/app/spinner";
 
 export function NewCreativeForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>;
+    setBusy(true);
     try { const r = await api<{ creative: { id: string } }>("/api/push-creatives", { ...f, web_url: f.web_url || null }); router.push(`/creatives/${r.creative.id}`); }
-    catch (err) { setError((err as Error).message); }
+    catch (err) { setError((err as Error).message); setBusy(false); }
   }
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-3 text-sm">
@@ -24,7 +27,7 @@ export function NewCreativeForm() {
         <input name="web_url" type="url" placeholder="https:// link (optional)" className={field} />
       </div>
       {error && <p role="alert" className="text-red-600">{error}</p>}
-      <div><button className={button}>Create draft</button></div>
+      <div><button className={`${button} inline-flex items-center gap-2`} disabled={busy}>{busy && <Spinner />}Create draft</button></div>
     </form>
   );
 }

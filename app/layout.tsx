@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { Spinner } from "./spinner";
 import { Geist } from "next/font/google";
 import "./globals.css";
 
@@ -18,7 +19,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <Link href="/creatives" className="hover:underline">Creatives</Link>
           </nav>
         </header>
-        <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6"><Suspense fallback={<p className="text-sm text-zinc-500">Loading…</p>}>{children}</Suspense></main>
+        <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6"><Suspense fallback={<div className="flex items-center gap-3 py-16 text-sm text-zinc-500"><Spinner /> Loading…</div>}>{children}</Suspense></main>
       </body>
     </html>
   );

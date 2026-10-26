@@ -5,6 +5,7 @@ import { api, button, field, secondary } from "../ui";
 import type { Creative, CreativeVersion } from "@/lib/creatives";
 import { LIMITS } from "@/lib/push/creative";
 import { IMPLEMENTED_ROUTES, ROUTE_KEYS } from "@/lib/push/routes";
+import { Spinner } from "@/app/spinner";
 
 export function Editor({ creative, lint, titleBytes, bodyBytes, versions }: { creative: Creative; lint: string[]; titleBytes: number; bodyBytes: number; versions: CreativeVersion[] }) {
   const router = useRouter();
@@ -12,8 +13,9 @@ export function Editor({ creative, lint, titleBytes, bodyBytes, versions }: { cr
   const [body, setBody] = useState(creative.body);
   const [msg, setMsg] = useState<string | null>(null);
   const [out, setOut] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const draft = creative.status === "draft";
-  const call = async (fn: () => Promise<unknown>, ok: string) => { try { const r = await fn(); setMsg(ok); setOut(r ? JSON.stringify(r, null, 2) : null); router.refresh(); } catch (e) { setMsg((e as Error).message); } };
+  const call = async (fn: () => Promise<unknown>, ok: string) => { setBusy(true); try { const r = await fn(); setMsg(ok); setOut(r ? JSON.stringify(r, null, 2) : null); router.refresh(); } catch (e) { setMsg((e as Error).message); } finally { setBusy(false); } };
 
   async function save(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -40,10 +42,11 @@ export function Editor({ creative, lint, titleBytes, bodyBytes, versions }: { cr
         </div>
       </div>
       <p className="text-zinc-500">server bytes: title {titleBytes}, body {bodyBytes}{lint.length > 0 && <span className="text-amber-600"> · lint: {lint.join(", ")}</span>}</p>
-      <div className="flex flex-wrap gap-3">
-        <button className={button} disabled={!draft}>Save draft</button>
-        <button type="button" className={secondary} onClick={() => call(() => api(`/api/push-creatives/${creative.id}/preview`, {}), "Preview (read-only)")}>Preview payload</button>
-        <button type="button" className={secondary} disabled={!draft || lint.length > 0} onClick={() => call(() => api(`/api/push-creatives/${creative.id}/approve`, { row_version: creative.row_version }), "Approved and frozen. Go to Send to use it.")}>Approve</button>
+      <div className="flex flex-wrap items-center gap-3">
+        <button className={button} disabled={!draft || busy}>Save draft</button>
+        <button type="button" className={secondary} onClick={() => call(() => api(`/api/push-creatives/${creative.id}/preview`, {}), "Preview (read-only)")} disabled={busy}>Preview payload</button>
+        <button type="button" className={secondary} disabled={!draft || lint.length > 0 || busy} onClick={() => call(() => api(`/api/push-creatives/${creative.id}/approve`, { row_version: creative.row_version }), "Approved and frozen. Go to Send to use it.")}>Approve</button>
+        {busy && <Spinner className="text-zinc-500" />}
       </div>
       {msg && <p role="status">{msg}</p>}
       {out && <pre className="overflow-auto rounded bg-zinc-100 p-3 text-xs dark:bg-zinc-800">{out}</pre>}
