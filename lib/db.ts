@@ -8,4 +8,4 @@ export function db() {
   return createClient(url, key, { auth: { persistSession: false } });
 }
 
-export type Device = { firebase_uid: string; display_name: string | null; token: string; updated_at: string };
+export type Device = { firebase_uid: string; display_name: string | null; token: string; marketing_choice: "opted_in" | "opted_out" | null; updated_at: string };

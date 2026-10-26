@@ -1,6 +1,5 @@
 import { getApps, initializeApp, cert, type App } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
-import { getMessaging } from "firebase-admin/messaging";
 
 function app(): App {
   const existing = getApps()[0];
@@ -16,7 +15,10 @@ export async function verifyFirebaseUid(authorization: string | null): Promise<s
   try { return (await getAuth(app()).verifyIdToken(token)).uid; } catch { return null; }
 }
 
-/** Sends one notification to one device token. Returns the FCM message name. */
-export function sendPush(token: string, title: string, body: string): Promise<string> {
-  return getMessaging(app()).send({ token, notification: { title, body }, android: { priority: "high" } });
+/** Short-lived OAuth token for direct FCM HTTP v1 calls (server only). */
+export async function fcmAccessToken(): Promise<{ token: string; expiresAt: number }> {
+  const cred = app().options.credential;
+  if (!cred) throw new Error("FIREBASE_SERVICE_ACCOUNT_JSON missing");
+  const t = await cred.getAccessToken();
+  return { token: t.access_token, expiresAt: Date.now() + t.expires_in * 1000 };
 }

@@ -1,20 +1,27 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { currentUser } from "@/lib/auth";
-import { db, type Device } from "@/lib/db";
-import { SendForm } from "./send-form";
+import { listCreatives } from "@/lib/creatives";
+import { db } from "@/lib/db";
+import { NewCreativeForm } from "./push/new-form";
 
 export default async function Home() {
-  const user = await currentUser();
-  if (!user) redirect("/login");
-  const { data } = await db().from("push_device").select("firebase_uid,display_name,updated_at").order("updated_at", { ascending: false });
-  const devices = (data ?? []) as Omit<Device, "token">[];
+  if (!(await currentUser())) redirect("/login");
+  const [creatives, { count }] = await Promise.all([listCreatives(), db().from("push_device").select("*", { count: "exact", head: true })]);
   return (
-    <main className="mx-auto flex w-full max-w-xl flex-col gap-6 p-6">
+    <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
       <header className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Nerd Push</h1>
+        <div><h1 className="text-xl font-semibold">Nerd Push</h1><p className="text-sm text-zinc-500">{count ?? 0} registered device(s) · provider {process.env.PUSH_PROVIDER ?? "mock"}</p></div>
         <form action="/api/auth/logout" method="post"><button className="text-sm underline">Sign out</button></form>
       </header>
-      <SendForm devices={devices} />
+      <section className="rounded-lg border border-zinc-200 p-5 dark:border-zinc-800"><h2 className="mb-3 font-medium">New creative</h2><NewCreativeForm /></section>
+      <section className="rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
+        <h2 className="mb-3 font-medium">Creatives</h2>
+        <ul className="divide-y divide-zinc-100 text-sm dark:divide-zinc-800">
+          {creatives.length === 0 && <li className="py-4 text-zinc-500">None yet.</li>}
+          {creatives.map((c) => <li key={c.id} className="flex justify-between py-2"><Link href={`/push/${c.id}`} className="underline">{c.label}</Link><span className="text-zinc-500">{c.message_class} → {c.route} · {c.status}</span></li>)}
+        </ul>
+      </section>
     </main>
   );
 }
