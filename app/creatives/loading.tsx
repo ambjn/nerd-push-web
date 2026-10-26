@@ -1,4 +1,4 @@
-import { Spinner } from "./spinner";
+import { Spinner } from "@/app/spinner";
 
 /** Route-level progress: shown by Next.js while a page's server data loads. */
 export default function Loading() {
