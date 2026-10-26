@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { connection } from "next/server";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { currentUser } from "@/lib/auth";
 import { getCreative, listVersions } from "@/lib/creatives";
 import { bytes, lintCreative } from "@/lib/push/creative";
 import { Editor } from "./editor";
 
 export default async function CreativePage({ params }: { params: Promise<{ id: string }> }) {
-  await connection(); // render at request time: the database is read per request, never at build
+  if (!(await currentUser())) redirect("/login");
   const { id } = await params;
   const creative = await getCreative(id);
   if (!creative) notFound();
