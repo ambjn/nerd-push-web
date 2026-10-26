@@ -1,28 +1,27 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, button, card, field, label } from "@/components/ui";
+
+const field = "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900";
 
 export default function Login() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setBusy(true); setError(null);
-    const f = new FormData(e.currentTarget);
-    try {
-      await api("/api/auth/login", { method: "POST", body: JSON.stringify({ email: f.get("email"), password: f.get("password") }) });
-      router.push("/"); router.refresh();
-    } catch (err) { setError((err as Error).message); } finally { setBusy(false); }
+    const f = Object.fromEntries(new FormData(e.currentTarget));
+    const res = await fetch("/api/auth/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(f) });
+    if (res.ok) { router.push("/"); router.refresh(); } else setError("Invalid email or password");
   }
   return (
-    <form onSubmit={onSubmit} className={`${card} mx-auto mt-24 flex w-full max-w-sm flex-col gap-4`}>
-      <h1 className="text-lg font-semibold">Staff sign in</h1>
-      <label className={label}><span>Email</span><input name="email" type="email" required className={field} /></label>
-      <label className={label}><span>Password</span><input name="password" type="password" required className={field} /></label>
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-      <button className={button} disabled={busy}>Sign in</button>
-    </form>
+    <main className="mx-auto mt-24 flex w-full max-w-sm flex-col gap-4 p-6">
+      <h1 className="text-xl font-semibold">Sign in</h1>
+      <form onSubmit={onSubmit} className="flex flex-col gap-3">
+        <input name="email" type="email" placeholder="Email" required className={field} />
+        <input name="password" type="password" placeholder="Password" required className={field} />
+        {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+        <button className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">Sign in</button>
+      </form>
+    </main>
   );
 }
