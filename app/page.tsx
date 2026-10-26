@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { listCreatives } from "@/lib/creatives";
 import { db } from "@/lib/db";
 import { NewCreativeForm } from "./push/new-form";
 
 export default async function Home() {
+  await connection(); // render at request time: the database is read per request, never at build
   const [creatives, { count }] = await Promise.all([listCreatives(), db().from("push_device").select("*", { count: "exact", head: true })]);
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
