@@ -6,7 +6,7 @@ import type { Creative, CreativeVersion } from "@/lib/creatives";
 import { LIMITS } from "@/lib/push/creative";
 import { IMPLEMENTED_ROUTES, ROUTE_KEYS } from "@/lib/push/routes";
 
-export function Editor({ creative, lint, titleBytes, bodyBytes, versions }: { creative: Creative; lint: string[]; titleBytes: number; bodyBytes: number; versions: CreativeVersion[] }) {
+export function Editor({ creative, lint, titleBytes, bodyBytes, versions, registered }: { creative: Creative; lint: string[]; titleBytes: number; bodyBytes: number; versions: CreativeVersion[]; registered: { firebase_uid: string; display_name: string | null; updated_at: string }[] | null }) {
   const router = useRouter();
   const [title, setTitle] = useState(creative.title);
   const [body, setBody] = useState(creative.body);
@@ -48,7 +48,14 @@ export function Editor({ creative, lint, titleBytes, bodyBytes, versions }: { cr
         <button type="button" className={secondary} disabled={!draft || lint.length > 0} onClick={() => call(() => api(`/api/push-creatives/${creative.id}/approve`, { row_version: creative.row_version }), "Approved: version frozen")}>Approve</button>
       </div>
       <div className="flex flex-wrap items-end gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-        <label className="flex flex-col gap-1"><span className="text-zinc-500">Test send to canary Firebase UID (must be in PUSH_TEST_SEND_USER_KEYS)</span><input value={uid} onChange={(e) => setUid(e.target.value)} className={field} /></label>
+        <label className="flex flex-col gap-1"><span className="text-zinc-500">Test send to a registered user (read-only bridge to the app&apos;s logged-in devices)</span>
+          {registered === null ? <input value={uid} onChange={(e) => setUid(e.target.value)} placeholder="reader unavailable: enter Firebase UID" className={field} /> : (
+            <select value={uid} onChange={(e) => setUid(e.target.value)} className={field}>
+              <option value="">{registered.length ? "Choose a user" : "No registered devices yet"}</option>
+              {registered.map((r) => <option key={r.firebase_uid} value={r.firebase_uid}>{r.display_name ?? r.firebase_uid} · {new Date(r.updated_at).toLocaleString()}</option>)}
+            </select>
+          )}
+        </label>
         <button type="button" className={secondary} disabled={!latest || !uid} onClick={() => call(() => api(`/api/push-creatives/${creative.id}/test-send`, { firebaseUid: uid, versionId: latest?.id }), "Test send recorded (accepted = accepted by FCM, not shown on phone)")}>Test send v{latest?.version ?? "–"}</button>
       </div>
       {msg && <p role="status">{msg}</p>}
