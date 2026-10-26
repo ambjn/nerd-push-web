@@ -1,12 +1,10 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import { currentUser } from "@/lib/auth";
+import { notFound } from "next/navigation";
 import { getCreative, listVersions } from "@/lib/creatives";
 import { bytes, lintCreative } from "@/lib/push/creative";
 import { Editor } from "./editor";
 
 export default async function CreativePage({ params }: { params: Promise<{ id: string }> }) {
-  if (!(await currentUser())) redirect("/login");
   const { id } = await params;
   const creative = await getCreative(id);
   if (!creative) notFound();

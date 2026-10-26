@@ -1,20 +1,16 @@
-import { currentUser } from "@/lib/auth";
+import { DASHBOARD_ACTOR } from "@/lib/actor";
 import { createCreative, listCreatives, parseInput, patchCreative } from "@/lib/creatives";
 
 export async function GET() {
-  if (!(await currentUser())) return Response.json({ error: "unauthenticated" }, { status: 401 });
   return Response.json(await listCreatives());
 }
 export async function POST(req: Request) {
-  const user = await currentUser();
-  if (!user) return Response.json({ error: "unauthenticated" }, { status: 401 });
   const input = parseInput(await req.json().catch(() => null));
   if ("error" in input) return Response.json(input, { status: 400 });
-  return Response.json(await createCreative(user.id, input), { status: 201 });
+  return Response.json(await createCreative(DASHBOARD_ACTOR, input), { status: 201 });
 }
 /** Draft edit with row-version compare-and-swap: { id, row_version, patch }. */
 export async function PATCH(req: Request) {
-  if (!(await currentUser())) return Response.json({ error: "unauthenticated" }, { status: 401 });
   const b = (await req.json().catch(() => null)) as { id?: unknown; row_version?: unknown; patch?: unknown } | null;
   if (typeof b?.id !== "string" || typeof b.row_version !== "number") return Response.json({ error: "missing_id_or_row_version" }, { status: 400 });
   const patch = parseInput(b.patch, true);
